@@ -2,6 +2,10 @@ package com.composemovies.utils.extensions
 
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.composemovies.dependency_injection.ViewModelModule
 
@@ -9,17 +13,35 @@ import com.composemovies.dependency_injection.ViewModelModule
 inline fun <reified VM : ViewModel> ComponentActivity.provideViewModel() =
     ViewModelModule.provideViewModel<VM>(this)
 
-//fun imageFromGlide(context: Context, poster_path:String, imageView :ImageView){
-//    // Using Glide to ImageView
-//    val url = "https://image.tmdb.org/t/p/w500/${poster_path}" //basic path to get images + specific end path from the movie
-//    val calendar = Calendar.getInstance()
-//    val versionNumber =calendar.get(Calendar.DAY_OF_WEEK) + calendar.get(Calendar.WEEK_OF_YEAR) +
-//            calendar.get(Calendar.YEAR) *100
-//    Glide.with(context)
-//        .load(url)
-//        .signature(IntegerVersionSignature(versionNumber))
-//        .placeholder(circularProgressDrawable(context))
-//        .error(ContextCompat.getDrawable(context.applicationContext, R.drawable.ic_baseline_image_not_supported_40 ))
-//        .into(imageView)
 
-//}
+@Composable
+fun rememberWidowInfo(): WindowInfo{
+    val configuration = LocalConfiguration.current
+    return WindowInfo(
+        screenHeightInfo = when {
+            configuration.screenWidthDp < 600 -> WindowInfo.WindowType.Compact
+            configuration.screenWidthDp < 840 -> WindowInfo.WindowType.Medium
+            else -> WindowInfo.WindowType.Expended
+        },
+        screenWithInfo = when {
+            configuration.screenHeightDp < 480 -> WindowInfo.WindowType.Compact
+            configuration.screenHeightDp < 900 -> WindowInfo.WindowType.Medium
+            else -> WindowInfo.WindowType.Expended},
+        screenWith = configuration.screenWidthDp.dp,
+        screenHeight = configuration.screenHeightDp.dp
+    )
+}
+
+data class WindowInfo(
+    val screenWithInfo: WindowType,
+    val screenHeightInfo: WindowType,
+    val screenWith: Dp,
+    val screenHeight: Dp
+){
+    sealed class WindowType{
+        object Compact: WindowType()
+        object Medium: WindowType()
+        object Expended: WindowType()
+    }
+}
+

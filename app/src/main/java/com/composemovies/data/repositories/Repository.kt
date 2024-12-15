@@ -9,6 +9,6 @@ class Repository(
 
     suspend fun getGenreMovies() = remoteDataSource.getGenreMovies()
 
-    suspend fun getListOfMovies(genreName :String) = remoteDataSource.getListOfMovies(genreName)
+    suspend fun getListOfMovies(genreName: String, page: Int) = remoteDataSource.getListOfMovies(genreName, page)
 
 }

@@ -2,6 +2,7 @@ package com.composemovies.ui.pages.main.viewmodel
 
 
 import android.util.Log
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableStateOf
 
 import androidx.lifecycle.ViewModel
@@ -13,10 +14,13 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(private val repository: Repository) : ViewModel() {
 
-    var genreListNames = mutableStateOf(arrayListOf<String>("item1", "item2", "item3"))
+    var genreListNames = mutableStateOf(arrayListOf(""))
     var moviesList = mutableStateOf(arrayListOf<Result>())
     var selectedTab = mutableStateOf(0)
     var genreList = arrayListOf<Genre>()
+    var listState: LazyGridState? = null
+    var currentPage = 1
+
 
     init {
         getListOfGenre()
@@ -31,7 +35,6 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
             }
 
             is com.movies_selcom.data.error_handler.Result.Success -> {
-                Log.e("test", "resolt:" + result.data.toString())
                 result.data?.let {
                     genreList = it.genres
                     genreListNames.value = getNameList(genreList)
@@ -49,19 +52,19 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         return returnList
     }
 
-    fun setGenre(genreId: Int) = viewModelScope.launch {
-        Log.e("test", "genreName:$genreId")
+    fun setListOfMovies(genreId: Int, page: Int = 1) = viewModelScope.launch {
+        currentPage = page
         val fixedGenreId =  getGenreIdFromTheList(genreList,genreId)
-            when (val result = repository.getListOfMovies(fixedGenreId)) {
+            when (val result = repository.getListOfMovies(fixedGenreId, currentPage)) {
                 is com.movies_selcom.data.error_handler.Result.Error -> {
                     val errorMessage = result.error
                     Log.e("Error", "error: " + errorMessage.toString())
                 }
 
                 is com.movies_selcom.data.error_handler.Result.Success -> {
-                    Log.e("test", "resolt:" + result.data.toString())
                     result.data?.let { movieModle ->
-                        moviesList.value = movieModle.results
+                        if (currentPage != 1) moviesList.value += movieModle.results
+                        else moviesList.value = movieModle.results
                 }
 
             }

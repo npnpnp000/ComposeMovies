@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,10 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -27,16 +28,25 @@ import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,9 +54,14 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.composemovies.R
 import com.composemovies.model.response_models.Result
+import com.composemovies.ui.components.AutoResizedText
 import com.composemovies.ui.pages.main.viewmodel.MainViewModel
 import com.composemovies.ui.theme.ComposeMoviesTheme
+import com.composemovies.utils.extensions.WindowInfo
 import com.composemovies.utils.extensions.provideViewModel
+import com.composemovies.utils.extensions.rememberWidowInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -102,6 +117,7 @@ fun MainTitle() {
 fun TabView() {
     val selectedTabIndex = mainViewModel.selectedTab
      val tabs = mainViewModel.genreListNames
+    val coroutineScope = rememberCoroutineScope()
     Column {
 
         ScrollableTabRow(
@@ -112,7 +128,7 @@ fun TabView() {
             indicator = { tabPositions ->
                 SecondaryIndicator(
                     modifier = Modifier
-                        .tabIndicatorOffset(tabPositions[selectedTabIndex.value.toInt()])
+                        .tabIndicatorOffset(tabPositions[selectedTabIndex.value])
                         .fillMaxWidth(),
                     color = Color.Black
                 )
@@ -121,7 +137,7 @@ fun TabView() {
             tabs.value.forEachIndexed { index, tab ->
                 Tab(
                     selected = selectedTabIndex.value == index,
-                    onClick = { selectedTabIndex.value = index },
+                    onClick = { onSelectedTab(selectedTabIndex,index, coroutineScope) },
                     modifier = Modifier.padding(8.dp),
                     content = {
                         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -137,22 +153,61 @@ fun TabView() {
             }
         }
 
-        mainViewModel.setGenre(selectedTabIndex.value)
+        mainViewModel.setListOfMovies(selectedTabIndex.value)
     }
 }
 
-@Composable
+    private fun onSelectedTab(
+        selectedTabIndex: MutableState<Int>,
+        index: Int,
+        coroutineScope: CoroutineScope
+    ) {
+        selectedTabIndex.value = index
+
+        coroutineScope.launch {
+            if(mainViewModel.moviesList.value.isNotEmpty()){
+                mainViewModel.listState?.scrollToItem(0)
+            }
+        }
+
+    }
+
+    @Composable
 fun MoviesList() {
-    val movies = mainViewModel.moviesList.value
-    LazyHorizontalGrid(rows = GridCells.Fixed(2),
-        verticalArrangement = Arrangement.Center) {
-        items(movies.size) { i ->
-            MovieItem(movies[i])
+    val movies = mainViewModel.moviesList
+    mainViewModel.listState = rememberLazyGridState()
+    LazyHorizontalGrid(state = mainViewModel.listState!!, rows = GridCells.Fixed(2),
+        verticalArrangement = Arrangement.SpaceEvenly) {
+        items(movies.value.size) { i ->
+            MovieItem(movies.value[i])
         }
     }
-}
 
-@Composable
+        mainViewModel.listState?.let { listState->
+
+            val reachedBottom: Boolean by remember {
+                derivedStateOf {
+                    val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                    lastVisibleItem?.index != 0 && lastVisibleItem?.index == listState.layoutInfo.totalItemsCount - 1
+                }
+            }
+            // act when end of list reached
+            LaunchedEffect(reachedBottom) {
+                if (reachedBottom) {
+                    mainViewModel.setListOfMovies(
+                        mainViewModel.selectedTab.value,
+                        mainViewModel.currentPage + 1
+                    )
+                    Log.e("testimage", "End the list")
+                }
+            }
+        }
+
+    }
+
+
+
+    @Composable
 fun MovieItem(result: Result) {
     Log.e("testimage","https://image.tmdb.org/t/p/w500${result.poster_path}")
     Column(
@@ -160,6 +215,7 @@ fun MovieItem(result: Result) {
         verticalArrangement = Arrangement.Center
     ) {
         AsyncImage(
+            alignment = Alignment.Center,
             model = ImageRequest.Builder(LocalContext.current)
                 .data("https://image.tmdb.org/t/p/w780${result.poster_path}")
                 .crossfade(true)
@@ -167,42 +223,94 @@ fun MovieItem(result: Result) {
             placeholder = painterResource(R.drawable.ic_launcher_background),
             error = painterResource(R.drawable.image_load_failed_128),
             contentDescription = null,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
                 .padding(5.dp)
-                .weight(1f, fill = true)
+                .weight(0.6f)
         )
 
-        StarRatingSample()
-
-        Text(
-            text = result.title,
+        Box(Modifier.weight(0.1f),
+            contentAlignment = Alignment.Center) {
+            StarRatingSample(result.vote_average)
+        }
+        val widowInfo = rememberWidowInfo()
+        val modifier = getModifierByScreenInfo(widowInfo)
+        val style = getStyleByScreenInfo(widowInfo)
+        AutoResizedText(
+            text = setMovieText(result),
             color = Color.Black,
-            modifier = Modifier.padding(5.dp)
+            textAlign = TextAlign.Center,
+            modifier = modifier.weight(0.3f),
+            style = style
+
         )
     }
 }
+    @Composable
+    private fun getStyleByScreenInfo(widowInfo: WindowInfo): TextStyle {
+        if (widowInfo.screenHeightInfo is WindowInfo.WindowType.Compact ||
+            widowInfo.screenWithInfo is WindowInfo.WindowType.Expended){
+            return MaterialTheme.typography.bodyLarge
+        }else{
+            return MaterialTheme.typography.bodySmall
+        }
+    }
+    private fun getModifierByScreenInfo(widowInfo: WindowInfo):Modifier{
+        if (widowInfo.screenHeightInfo is WindowInfo.WindowType.Compact ||
+            widowInfo.screenWithInfo is WindowInfo.WindowType.Expended){
+            return Modifier
+                .padding(5.dp)
+                .width(200.dp)
+        }else{
+            return Modifier
+                .padding(5.dp)
+                .width(100.dp)
+        }
+    }
 
-@Composable
-fun StarRatingSample() {
-    var rating by remember { mutableFloatStateOf(1f) } //default rating will be 1
+    private fun setMovieText(result: Result): String { //
+        return result.title +
+                "\n" +
+                " (${getYearOnly(result.release_date)})"
+    }
+
+    private fun getYearOnly(releaseDate: String): String {
+        return releaseDate.split("-")[0] // get the first from YYYY-MM-DD date format
+    }
+
+    @Composable
+fun StarRatingSample(rating: Double) {
+
+        var rememberRating by remember { mutableFloatStateOf((rating/2).toFloat()) }
+
+    Log.e("rating", "popularity: "+rating+ "toFloat:" +rememberRating+ "toInt:" +rememberRating.toInt())
 
     StarRatingBar(
         maxStars = 5,
-        rating = rating,
+        rating = rememberRating,
         onRatingChanged = {
-            rating = it
+            rememberRating = it
         }
     )
 }
 
-@Composable
+    @Composable
+    private fun getStarIcon(rating: Float, i: Int): ImageVector {
+
+        if (rating.toInt()+1 == i && rating+1 > i ) return ImageVector.vectorResource(R.drawable.half_star)
+        if (rating <= i) return ImageVector.vectorResource(R.drawable.empty_star)
+        return ImageVector.vectorResource(R.drawable.star)
+    }
+
+    @Composable
 fun StarRatingBar(
     maxStars: Int = 5,
     rating: Float,
     onRatingChanged: (Float) -> Unit
 ) {
+    val widowInfo = rememberWidowInfo()
     val density = LocalDensity.current.density
-    val starSize = (12f * density).dp
+    val starSize = (getStarSizeByScreenInfo(widowInfo) * density).dp
     val starSpacing = (0.5f * density).dp
 
     Row(
@@ -211,12 +319,11 @@ fun StarRatingBar(
     ) {
         for (i in 1..maxStars) {
             val isSelected = i <= rating
-            val icon = if (isSelected) Icons.Filled.Star else Icons.Default.Star
-            val iconTintColor = if (isSelected) Color(0xFFFFC700) else Color(0x20FFFFFF)
+            val icon = getStarIcon(rating,i)
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = iconTintColor,
+                tint = Color(0xFFFFC700),
                 modifier = Modifier
                     .width(starSize)
                     .height(starSize)
@@ -229,12 +336,21 @@ fun StarRatingBar(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun MainPreview() {
-    ComposeMoviesTheme {
-        Main(Modifier.padding())
+    private fun getStarSizeByScreenInfo(widowInfo: WindowInfo): Float{
+        if (widowInfo.screenHeightInfo is WindowInfo.WindowType.Compact ||
+            widowInfo.screenWithInfo is WindowInfo.WindowType.Expended){
+            return 12f
+        }else{
+            return 6f
+        }
     }
-}
+
+    @Preview(showBackground = true)
+    @Composable
+    fun MainPreview() {
+        ComposeMoviesTheme {
+            Main(Modifier.padding())
+        }
+    }
 
 }
