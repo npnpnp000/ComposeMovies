@@ -1,5 +1,8 @@
 package com.composemovies.ui.components
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,8 +15,26 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
+import com.composemovies.model.response_models.Result
+import com.composemovies.utils.extensions.WindowInfo
+import com.composemovies.utils.extensions.rememberWidowInfo
 
+@Composable
+fun TextItem(result: Result) {
+    val widowInfo = rememberWidowInfo()
+     val modifir = getModifierByScreenInfo(widowInfo)
+    val style = getStyleByScreenInfo(widowInfo)
+    AutoResizedText(
+        text = setMovieText(result),
+        color = Color.Black,
+        textAlign = TextAlign.Center,
+        modifier = modifir.fillMaxSize(),
+        style = style
+
+    )
+}
 
 @Composable
 fun AutoResizedText(
@@ -58,4 +79,36 @@ fun AutoResizedText(
             }
         }
     )
+}
+
+@Composable
+private fun getStyleByScreenInfo(widowInfo: WindowInfo): TextStyle {
+    if (widowInfo.screenHeightInfo is WindowInfo.WindowType.Compact ||
+        widowInfo.screenWithInfo is WindowInfo.WindowType.Expended){
+        return MaterialTheme.typography.bodyLarge
+    }else{
+        return MaterialTheme.typography.bodySmall
+    }
+}
+private fun getModifierByScreenInfo(widowInfo: WindowInfo) :Modifier{
+    if (widowInfo.screenHeightInfo is WindowInfo.WindowType.Compact ||
+        widowInfo.screenWithInfo is WindowInfo.WindowType.Expended){
+        return Modifier
+            .padding(5.dp)
+            .width(200.dp)
+    }else{
+        return Modifier
+            .padding(5.dp)
+            .width(100.dp)
+    }
+}
+
+private fun setMovieText(result: Result): String { //
+    return result.title +
+            "\n" +
+            " (${getYearOnly(result.release_date)})"
+}
+
+private fun getYearOnly(releaseDate: String): String {
+    return releaseDate.split("-")[0] // get the first from YYYY-MM-DD date format
 }
