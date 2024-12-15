@@ -29,12 +29,12 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private fun getListOfGenre() = viewModelScope.launch {
 
         when (val result = repository.getGenreMovies()) {
-            is com.movies_selcom.data.error_handler.Result.Error -> {
+            is com.composemovies.data.error_handler.Result.Error -> {
                 val errorMessage = result.error
                 Log.e("Error", "error: " + errorMessage.toString())
             }
 
-            is com.movies_selcom.data.error_handler.Result.Success -> {
+            is com.composemovies.data.error_handler.Result.Success -> {
                 result.data?.let {
                     genreList = it.genres
                     genreListNames.value = getNameList(genreList)
@@ -56,12 +56,12 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         currentPage = page
         val fixedGenreId =  getGenreIdFromTheList(genreList,genreId)
             when (val result = repository.getListOfMovies(fixedGenreId, currentPage)) {
-                is com.movies_selcom.data.error_handler.Result.Error -> {
+                is com.composemovies.data.error_handler.Result.Error -> {
                     val errorMessage = result.error
                     Log.e("Error", "error: " + errorMessage.toString())
                 }
 
-                is com.movies_selcom.data.error_handler.Result.Success -> {
+                is com.composemovies.data.error_handler.Result.Success -> {
                     result.data?.let { movieModle ->
                         if (currentPage != 1) moviesList.value += movieModle.results
                         else moviesList.value = movieModle.results

@@ -4,9 +4,9 @@ package com.composemovies.utils.extensions
 
 import com.composemovies.model.response_models.GenreItems
 import com.composemovies.model.response_models.MoviesModel
-import com.movies_selcom.data.error_handler.DataError
-import com.movies_selcom.data.error_handler. DataError.Network.*
-import com.movies_selcom.data.error_handler.Result
+import com.composemovies.data.error_handler.DataError
+import com.composemovies.data.error_handler.DataError.Network.*
+import com.composemovies.data.error_handler.Result
 import retrofit2.HttpException
 
     fun findErrorGenre(e: HttpException): Result<GenreItems?, DataError.Network> {
@@ -18,7 +18,7 @@ import retrofit2.HttpException
         return findError(e) as Result<MoviesModel?, DataError.Network>
 
 }
-private fun findError(e: HttpException):  Result<Any?, DataError.Network>{
+private fun findError(e: HttpException): Result<Any?, DataError.Network> {
     return when (e.code()) {
 
         // Client Errors

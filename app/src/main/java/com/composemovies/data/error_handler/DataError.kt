@@ -1,4 +1,4 @@
-package com.movies_selcom.data.error_handler
+package com.composemovies.data.error_handler
 
 sealed interface DataError: Error {
     enum class Network(val code: Int): DataError {

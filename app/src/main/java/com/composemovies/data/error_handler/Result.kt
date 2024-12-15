@@ -1,4 +1,4 @@
-package com.movies_selcom.data.error_handler
+package com.composemovies.data.error_handler
 
 typealias RootError = Error
 

@@ -1,7 +1,6 @@
-package com.movies_selcom.dependency_injection
+package com.composemovies.dependency_injection
 
 import com.composemovies.data.repositories.Repository
-
 
 object RepositoryModule {
 
