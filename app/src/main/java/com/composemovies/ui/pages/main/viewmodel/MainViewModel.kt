@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.composemovies.data.error_handler.DataError
 import com.composemovies.data.repositories.Repository
 import com.composemovies.model.response_models.Genre
 import com.composemovies.model.response_models.GenreItems
@@ -31,18 +32,8 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     }
 
     private fun getListOfGenre() = viewModelScope.launch {
-
-        when (val result = repository.getGenreMovies()) {
-            is com.composemovies.data.error_handler.Result.Error -> {
-                val errorMessage = result.error
-                Log.e("Error", "error: " + errorMessage.toString())
-            }
-
-            is com.composemovies.data.error_handler.Result.Success -> {
-                result.data?.let {
-                    setGenresData(it)
-                }
-            }
+        checkGenreErrors(repository.getGenreMovies()){ genreItems ->
+            setGenresData(genreItems)
         }
     }
 
@@ -67,22 +58,10 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         if (page <= maxPages){
             currentPage = page
             val fixedGenreId =  getGenreIdFromTheList(genreList,genreId)
-            when (val result = repository.getListOfMovies(fixedGenreId, currentPage)) {
-                is com.composemovies.data.error_handler.Result.Error -> {
-                    val errorMessage = result.error
-                    Log.e("Error", "error: " + errorMessage.toString())
-                }
 
-                is com.composemovies.data.error_handler.Result.Success -> {
-                    result.data?.let { movieModule ->
-
-                        setListMoviesData(movieModule)
-
-                    }
-
-                }
+            checkMoviesErrors(repository.getListOfMovies(fixedGenreId, currentPage)){ movieModule ->
+                setListMoviesData(movieModule)
             }
-
         }
     }
 
@@ -101,6 +80,35 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         if (genreList.isNotEmpty()){fixedGenreId = genreList[genreId].id.toString()}
 
         return fixedGenreId
+    }
+
+    private fun checkMoviesErrors(result: com.composemovies.data.error_handler. Result<MoviesModel?, DataError. Network>, setData: (MoviesModel)-> Unit){
+        when (result) {
+            is com.composemovies.data.error_handler.Result.Error -> {
+                val errorMessage = result.error
+                Log.e("Error", "error: " + errorMessage.toString())
+            }
+
+            is com.composemovies.data.error_handler.Result.Success -> {
+                result.data?.let { movieModule ->
+                    setData(movieModule)
+                }
+            }
+        }
+    }
+    private fun checkGenreErrors(result: com.composemovies.data.error_handler. Result<GenreItems?, DataError. Network>, setData: (GenreItems)-> Unit){
+        when (result) {
+            is com.composemovies.data.error_handler.Result.Error -> {
+                val errorMessage = result.error
+                Log.e("Error", "error: " + errorMessage.toString())
+            }
+
+            is com.composemovies.data.error_handler.Result.Success -> {
+                result.data?.let { genreItems ->
+                    setData(genreItems)
+                }
+            }
+        }
     }
 }
 
