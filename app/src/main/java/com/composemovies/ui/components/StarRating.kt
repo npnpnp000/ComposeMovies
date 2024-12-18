@@ -40,8 +40,6 @@ fun StarRatingSample(rating: Double) {
 
     var rememberRating by remember { mutableFloatStateOf((rating/2).toFloat()) }
 
-    Log.e("rating", "popularity: "+rating+ "toFloat:" +rememberRating+ "toInt:" +rememberRating.toInt())
-
     StarRatingBar(
         maxStars = 5,
         rating = rememberRating,

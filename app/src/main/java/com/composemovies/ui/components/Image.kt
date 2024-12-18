@@ -29,4 +29,5 @@ fun Image(result: Result){
         modifier = Modifier.fillMaxSize()
             .padding(5.dp)
     )
+    
 }
