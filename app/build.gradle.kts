@@ -2,16 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.jetbrainsKotlinKsp)
+    alias(libs.plugins.hiltPlugin)
 }
 
 android {
     namespace = "com.composemovies"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.composemovies"
         minSdk = 31
-        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -64,8 +65,13 @@ dependencies {
     implementation(libs.coil.compose)
 
     // Retrofit
-    implementation ("com.google.code.gson:gson:2.10.1")
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation (libs.gson)
+    implementation (libs.retrofit)
+    implementation (libs.converter.gson)
+
+    //Hilt - Dagger
+    implementation (libs.hilt.android)
+    ksp(libs.dagger.compiler)
+    ksp(libs.hilt.compiler)
 
 }

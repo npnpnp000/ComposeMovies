@@ -49,7 +49,8 @@ class MainActivity : ComponentActivity() {
                             ),
                                 title= {
                                     MainTitle()
-                                }
+                                },
+
                             )
                         }) { innerPadding ->
                         Main(modifier = Modifier.padding(innerPadding))

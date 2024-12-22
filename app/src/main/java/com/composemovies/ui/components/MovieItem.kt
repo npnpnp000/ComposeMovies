@@ -1,6 +1,7 @@
 package com.composemovies.ui.components
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -19,7 +20,7 @@ import com.composemovies.model.response_models.Result
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MovieItem(result: Result) {
-    Card(modifier = Modifier.padding(5.dp),
+    Card(modifier = Modifier.padding(5.dp).background(color = MaterialTheme.colorScheme.background),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
